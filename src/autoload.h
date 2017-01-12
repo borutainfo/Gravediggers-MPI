@@ -2,7 +2,7 @@
 #define GRAVEDIGGERS_MPI_AUTOLOAD_H
 
 #include <iostream>
-//#include <mpi.h>
+#include <mpi.h>
 #include <list>
 #include <ctime>
 #include <cstdlib>
