@@ -1,0 +1,1 @@
+mpiexec -localonly 4 cmake-build-release/Gravediggers.exe
