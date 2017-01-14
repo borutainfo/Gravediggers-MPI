@@ -1,19 +1,31 @@
-#include "autoload.h"
+#include "distributor/Distributor.h"
+#include "process/CityCouncil.h"
+#include "process/FuneralHome.h"
+#include "config.h"
+
 using namespace std;
 
-CityCouncil *cityCouncil;
-
 int main(int argc, char **argv) {
-    cityCouncil = new CityCouncil();
-    cityCouncil->publishDeadList();
-    int size, rank, len;
-    char processor[100];
-    MPI_Init(&argc,&argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Get_processor_name(processor, &len);
-    Corpse *corpse = new Corpse(1);
-    printf("Hello world: %d of %d na (%s)\n", corpse->getId(), size, processor);
+    Distributor::initialize();
 
-    MPI_Finalize();
+    if (Distributor::identityCheck(CITY_COUNCIL)) {
+        CityCouncil *cityCouncil = new CityCouncil();
+        char a[5];
+        a[0] = 'a';
+        a[1] = 'b';
+        a[2] = 'c';
+        a[3] = 'd';
+        a[4] = 'e';
+        Distributor::send(a, 1);
+        Distributor::send(a, 2);
+        Distributor::send(a, 3);
+    }
+    else  {
+        char a[5];
+        Distributor::receive(&a, 0);
+        Debugger::out(a);
+        FuneralHome *funeralHome = new FuneralHome();
+    }
+
+    Distributor::finalize();
 }

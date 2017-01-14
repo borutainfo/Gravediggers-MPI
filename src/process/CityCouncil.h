@@ -1,17 +1,15 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "CannotResolve"
-#ifndef GRAVEDIGGERS_MPI_CITYCOUNCIL_H
-#define GRAVEDIGGERS_MPI_CITYCOUNCIL_H
+#ifndef GRAVEDIGGERS_CITYCOUNCIL_H
+#define GRAVEDIGGERS_CITYCOUNCIL_H
 
-#include "../autoload.h"
+#include "../entity/Corpse.h"
 using namespace std;
 
 class CityCouncil {
-    int numberOfDeaths;
-    list<Corpse*> *corpses;
+    int deathCounter;
+    Corpses *corpses;
 
 private:
-    void generateDeadList();
+    void generateNewDeadList();
 
 public:
     CityCouncil();
@@ -19,5 +17,3 @@ public:
 };
 
 #endif
-
-#pragma clang diagnostic pop
