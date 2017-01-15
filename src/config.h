@@ -10,5 +10,6 @@
 
 /** MESSAGE TAGS: */
 #define DEATH_LIST_PUBLICATION 1
+#define FUNERAL_OFFER 2
 
 #endif

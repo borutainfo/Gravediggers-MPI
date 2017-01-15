@@ -1,14 +1,14 @@
 #ifndef GRAVEDIGGERS_DISTRIBUTOR_H
 #define GRAVEDIGGERS_DISTRIBUTOR_H
 
-#include "iostream"
+#include <iostream>
 #include <mpi.h>
-#include "typeinfo"
+#include <typeinfo>
+#include "../config.h"
 
 class Distributor {
 
 private:
-    static int tid, size;
     struct ObjectInfo {
         MPI_Datatype type;
         size_t size;
@@ -29,6 +29,7 @@ private:
     }
 
 public:
+    static int tid, size;
     static void initialize();
     static void finalize();
     static bool identityCheck(int);
@@ -40,7 +41,7 @@ public:
 
     template <typename T> static void broadcast(T &data, int tag = 0) {
         for(int i = 0; i < Distributor::size; i++)
-            if(i != Distributor::tid)
+            if(i != Distributor::tid && i != CITY_COUNCIL)
                 send(data, i, tag);
     }
 
@@ -48,6 +49,19 @@ public:
         ObjectInfo* objectInfo = getObjectInfo(data);
         MPI_Status status;
         MPI_Recv(&data, objectInfo->size, objectInfo->type, sender, tag, MPI_COMM_WORLD, &status);
+    }
+
+    template <typename T> static bool negotiate(T &ownChoice, int clock, int tag = 0) {
+        T competitorChoice;
+        for (int i = 0; i < Distributor::size; i++) {
+            if (i != Distributor::tid && i != CITY_COUNCIL) {
+                receive(competitorChoice, i, tag);
+                if (competitorChoice[1] == ownChoice[1] && (competitorChoice[0] < ownChoice[0] ||
+                        competitorChoice[0] == ownChoice[0] && i < Distributor::tid))
+                        return false;
+            }
+        }
+        return true;
     }
 };
 

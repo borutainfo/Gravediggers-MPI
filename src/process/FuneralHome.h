@@ -6,12 +6,16 @@
 class FuneralHome {
 
 private:
+    unsigned int clock;
     Corpses *availableCorpses;
+    void selectCorpse();
+    void removeCorpseById(int id);
 
 public:
+    Corpse *corpse;
     FuneralHome();
     void getDeathList();
-    void selectCorpse();
+    bool makeAnOffer();
 
 };
 

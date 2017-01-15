@@ -10,19 +10,24 @@ using namespace std;
 int main(int argc, char **argv) {
     Distributor::initialize();
 
+    /** rada miasta */
     if (Distributor::identityCheck(CITY_COUNCIL)) {
         CityCouncil* cityCouncil = new CityCouncil();
-//        while(true) {
+        while(true) {
             cityCouncil->publishDeadList();
             cityCouncil->goDoSomethingElse();
-//        }
+        }
     }
+
+    /** dom pogrzebowy */
     else  {
         FuneralHome *funeralHome = new FuneralHome();
-//        while(true) {
+        while(true) {
             funeralHome->getDeathList();
-            funeralHome->selectCorpse();
-//        }
+            while(funeralHome->makeAnOffer()) {
+                cout << Distributor::tid << " robi pogrzeb " << funeralHome->corpse->getId() << endl;
+            }
+        }
     }
     Distributor::finalize();
 }

@@ -1,4 +1,3 @@
-#include <ctime>
 #include <cstdlib>
 #include <unistd.h>
 #include "../config.h"
@@ -7,7 +6,6 @@
 #include "CityCouncil.h"
 
 CityCouncil::CityCouncil() {
-    srand((unsigned int) time(NULL));
     this->deathCounter = 0;
     Debugger::out("Zarzad zostal wybrany");
 }
@@ -26,7 +24,7 @@ void CityCouncil::publishDeadList() {
     int deathList[MAX_NUMBER_OF_DEATHS+1];
     int i = 0;
     deathList[i++] = corpses->size();
-    for (Corpses::iterator corpse = corpses->begin(); corpse != corpses->end(); ++corpse)
+    for (Corpses::iterator corpse = corpses->begin(); corpse != corpses->end(); corpse++)
         deathList[i++] = (*corpse)->getId();
     Distributor::broadcast(deathList, DEATH_LIST_PUBLICATION);
     Debugger::out("Zarzad wywiesil nowa liste zmarlych");

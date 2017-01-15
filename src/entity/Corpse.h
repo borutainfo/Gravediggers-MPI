@@ -2,6 +2,7 @@
 #define GRAVEDIGGERS_CORPSE_H
 
 #include <vector>
+#include "../config.h"
 
 class Corpse {
     int id;
