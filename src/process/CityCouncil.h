@@ -14,6 +14,7 @@ private:
 public:
     CityCouncil();
     void publishDeadList();
+    void goDoSomethingElse();
 };
 
 #endif

@@ -1,8 +1,7 @@
 #ifndef GRAVEDIGGERS_CORPSE_H
 #define GRAVEDIGGERS_CORPSE_H
 
-#include <list>
-using namespace std;
+#include <vector>
 
 class Corpse {
     int id;
@@ -12,6 +11,6 @@ public:
     int getId();
 };
 
-typedef list<Corpse*> Corpses;
+typedef std::vector<Corpse*> Corpses;
 
 #endif

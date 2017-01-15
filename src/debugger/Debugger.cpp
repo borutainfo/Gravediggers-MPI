@@ -3,5 +3,5 @@
 
 void Debugger::out(std::string message) {
     if(DEBUG)
-        std::cout << message << endl;
+        std::cout << message << std::endl;
 }

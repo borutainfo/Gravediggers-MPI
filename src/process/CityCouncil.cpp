@@ -1,7 +1,9 @@
 #include <ctime>
 #include <cstdlib>
+#include <unistd.h>
 #include "../config.h"
 #include "../debugger/Debugger.h"
+#include "../distributor/Distributor.h"
 #include "CityCouncil.h"
 
 CityCouncil::CityCouncil() {
@@ -13,7 +15,6 @@ CityCouncil::CityCouncil() {
 void CityCouncil::generateNewDeadList() {
     this->corpses = new Corpses();
     int numberOfDeaths = MIN_NUMBER_OF_DEATHS + rand() % MAX_NUMBER_OF_DEATHS;
-    cout << numberOfDeaths << endl;
     for(int i = 1; i <= numberOfDeaths; i++) {
         this->corpses->push_back(new Corpse(this->deathCounter + i));
     }
@@ -22,6 +23,16 @@ void CityCouncil::generateNewDeadList() {
 
 void CityCouncil::publishDeadList() {
     this->generateNewDeadList();
+    int deathList[MAX_NUMBER_OF_DEATHS+1];
+    int i = 0;
+    deathList[i++] = corpses->size();
     for (Corpses::iterator corpse = corpses->begin(); corpse != corpses->end(); ++corpse)
-        cout << "grabaz nr " << (*corpse)->getId() << "\n";
+        deathList[i++] = (*corpse)->getId();
+    Distributor::broadcast(deathList, DEATH_LIST_PUBLICATION);
+    Debugger::out("Zarzad wywiesil nowa liste zmarlych");
+    std::cout << corpses->size() << std::endl;
+}
+
+void CityCouncil::goDoSomethingElse() {
+    sleep(10);
 }

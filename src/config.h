@@ -8,4 +8,7 @@
 
 #define CITY_COUNCIL 0
 
+/** MESSAGE TAGS: */
+#define DEATH_LIST_PUBLICATION 1
+
 #endif
