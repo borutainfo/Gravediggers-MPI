@@ -1,60 +1,81 @@
 #include <iostream>
 #include <cstdlib>
+#include <unistd.h>
 #include <algorithm>
-#include "../config.h"
+#include "FuneralHome.h"
 #include "../debugger/Debugger.h"
 #include "../distributor/Distributor.h"
-#include "FuneralHome.h"
 
 FuneralHome::FuneralHome() {
-    clock = 0;
+    Distributor::clock = 1;
     Debugger::out("Dom pogrzebowy zostal otwarty");
 }
 
+void FuneralHome::markCorpseAsUnavailable(int id) {
+    for (Corpses::iterator corpse = this->availableCorpses->begin();
+         corpse != this->availableCorpses->end(); corpse++) {
+        if ((*corpse)->getId() == id) {
+            this->availableCorpses->erase(corpse);
+            break;
+        }
+    }
+}
+
 void FuneralHome::getDeathList() {
-    clock++;
-    int deathList[MAX_NUMBER_OF_DEATHS+1];
-    Distributor::receive(deathList, CITY_COUNCIL, DEATH_LIST_PUBLICATION);
-    int numberOfDeaths = deathList[0];
     this->availableCorpses = new Corpses();
-    for(int i = 1; i <= numberOfDeaths; i++)
-        this->availableCorpses->push_back(new Corpse(deathList[i]));
+
+    Distributor::MultipleDataPacket packet;
+    Distributor::receive(packet, CITY_COUNCIL, DEATH_LIST_PUBLICATION);
+
+    for (int i = 0; i < packet.size; i++)
+        this->availableCorpses->push_back(new Corpse(packet.data[i]));
 }
 
 void FuneralHome::selectCorpse() {
-    clock++;
-    unsigned int selected = rand() % this->availableCorpses->size();
-    corpse = availableCorpses->at(selected);
-    availableCorpses->erase(availableCorpses->begin() + selected);
+    corpse = this->availableCorpses->at(rand() % this->availableCorpses->size());
+    this->markCorpseAsUnavailable(corpse->getId());
 }
 
-bool FuneralHome::makeAnOffer() {
-    int ownOffer[2], competitorOffer[2];
-    while(availableCorpses->size() > 0) {
-        selectCorpse();
-        int success = true;
-        ownOffer[0] = clock;
-        ownOffer[1] = corpse->getId();
-        Distributor::broadcast(ownOffer, FUNERAL_OFFER);
-        for (int i = 0; i < Distributor::size; i++) {
-            if (i != Distributor::tid && i != CITY_COUNCIL) {
-                Distributor::receive(competitorOffer, i, FUNERAL_OFFER);
-                removeCorpseById(competitorOffer[1]);
-                if (competitorOffer[1] == ownOffer[1] && (competitorOffer[0] < ownOffer[0] || (competitorOffer[0] == ownOffer[0] && i < Distributor::tid)))
-                    success = false;
+bool FuneralHome::negotiate() {
+    this->funeralsOrder.clear();
+
+    bool result = true;
+    Distributor::SingleDataPacket own, competitor;
+
+    while (availableCorpses->size() > 0) {
+        this->selectCorpse();
+
+        own.clock = ++Distributor::clock;
+        own.data = corpse->getId();
+
+        Distributor::broadcast(own, FUNERAL_OFFER);
+
+        for (int id = 0; id < Distributor::size; id++) {
+            if (id != Distributor::tid && id != CITY_COUNCIL &&
+                std::find(this->funeralsOrder.begin(), this->funeralsOrder.end(), id) == this->funeralsOrder.end()) {
+
+                Distributor::receive(competitor, id, FUNERAL_OFFER);
+                this->markCorpseAsUnavailable(competitor.data);
+
+                Distributor::clock = std::max(own.clock, competitor.clock);
             }
         }
-        if(success)
+        this->funeralsOrder = Distributor::getOrder();
+        Distributor::clock++;
+
+        if (std::find(this->funeralsOrder.begin(), this->funeralsOrder.end(), Distributor::tid) !=
+            this->funeralsOrder.end())
             return true;
     }
     return false;
 }
 
-void FuneralHome::removeCorpseById(int id) {
-    for (Corpses::iterator corpse = availableCorpses->begin(); corpse != availableCorpses->end(); corpse++) {
-        if ((*corpse)->getId() == id) {
-            availableCorpses->erase(corpse);
-            break;
-        }
-    }
+void FuneralHome::makeFuneral() {
+    Debugger::out("Zaklad pogrzebowy nr " + Debugger::number(Distributor::tid) + " robi pogrzeb zmarlemu nr " +
+                  Debugger::number(corpse->getId()));
+    sleep(FUNERAL_TIME);
+}
+
+void FuneralHome::meetWithOfficer() {
+
 }

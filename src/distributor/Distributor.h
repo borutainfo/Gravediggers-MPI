@@ -1,68 +1,53 @@
 #ifndef GRAVEDIGGERS_DISTRIBUTOR_H
 #define GRAVEDIGGERS_DISTRIBUTOR_H
 
-#include <iostream>
-#include <mpi.h>
-#include <typeinfo>
+#include <vector>
 #include "../config.h"
 
 class Distributor {
 
-private:
-    struct ObjectInfo {
-        MPI_Datatype type;
-        size_t size;
+public:
+    static int tid, size, clock;
+
+    struct SingleDataPacket {
+        int clock;
+        int data;
     };
 
-    template <typename T> static ObjectInfo* getObjectInfo(T &data) {
-        MPI_Datatype type = 0;
-        ObjectInfo* objectInfo = new ObjectInfo;
-        if (((std::string)typeid(T).name()).back() == 'c') {
-            objectInfo->type = MPI_CHAR;
-            objectInfo->size = sizeof(data) / sizeof(char);
-        }
-        else if (((std::string)typeid(T).name()).back() == 'i') {
-            objectInfo->type = MPI_INT;
-            objectInfo->size = sizeof(data) / sizeof(int);
-        }
-        return objectInfo;
-    }
+    struct MultipleDataPacket {
+        int size;
+        int data[MAX_ARRAY_SIZE];
+    };
 
-public:
-    static int tid, size;
+    struct SingleDataPacketSnapshot : SingleDataPacket {
+        int tid;
+        bool operator < (const SingleDataPacketSnapshot& rhs) const {
+            return clock < rhs.clock || (clock == rhs.clock && tid < rhs.tid);
+        }
+    };
+
+    static std::vector<SingleDataPacketSnapshot*> *snapshot;
+
     static void initialize();
     static void finalize();
+
     static bool identityCheck(int);
 
-    template <typename T> static void send(T &data, int receiver, int tag = 0) {
-        ObjectInfo* objectInfo = getObjectInfo(data);
-        MPI_Send(&data, objectInfo->size, objectInfo->type, receiver, tag, MPI_COMM_WORLD);
-    }
+    static void makeSnapshot(SingleDataPacket, int);
+    static std::vector<int> getOrder();
 
-    template <typename T> static void broadcast(T &data, int tag = 0) {
-        for(int i = 0; i < Distributor::size; i++)
-            if(i != Distributor::tid && i != CITY_COUNCIL)
-                send(data, i, tag);
-    }
+//    static void send(Packet &packet, int receiver, int tag = 0);
+    static void send(SingleDataPacket &packet, int receiver, int tag = 0);
+    static void send(MultipleDataPacket &packet, int receiver, int tag = 0);
 
-    template <typename T> static void receive(T& data, int sender, int tag = 0) {
-        ObjectInfo* objectInfo = getObjectInfo(data);
-        MPI_Status status;
-        MPI_Recv(&data, objectInfo->size, objectInfo->type, sender, tag, MPI_COMM_WORLD, &status);
-    }
+//    static void broadcast(Packet &packet, int tag = 0);
+    static void broadcast(SingleDataPacket &packet, int tag = 0);
+    static void broadcast(MultipleDataPacket &packet, int tag = 0);
 
-    template <typename T> static bool negotiate(T &ownChoice, int clock, int tag = 0) {
-        T competitorChoice;
-        for (int i = 0; i < Distributor::size; i++) {
-            if (i != Distributor::tid && i != CITY_COUNCIL) {
-                receive(competitorChoice, i, tag);
-                if (competitorChoice[1] == ownChoice[1] && (competitorChoice[0] < ownChoice[0] ||
-                        competitorChoice[0] == ownChoice[0] && i < Distributor::tid))
-                        return false;
-            }
-        }
-        return true;
-    }
+//    static void receive(Packet &packet, int sender, int tag = 0);
+    static void receive(SingleDataPacket &packet, int sender, int tag = 0);
+    static void receive(MultipleDataPacket &packet, int sender, int tag = 0);
+
 };
 
 #endif

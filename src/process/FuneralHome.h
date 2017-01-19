@@ -6,16 +6,20 @@
 class FuneralHome {
 
 private:
-    unsigned int clock;
     Corpses *availableCorpses;
+    std::vector<int> funeralsOrder;
+
     void selectCorpse();
-    void removeCorpseById(int id);
+    void markCorpseAsUnavailable(int id);
 
 public:
     Corpse *corpse;
+
     FuneralHome();
     void getDeathList();
-    bool makeAnOffer();
+    bool negotiate();
+    void makeFuneral();
+    void meetWithOfficer();
 
 };
 

@@ -1,9 +1,9 @@
 #include <cstdlib>
 #include <unistd.h>
-#include "../config.h"
+#include "CityCouncil.h"
+
 #include "../debugger/Debugger.h"
 #include "../distributor/Distributor.h"
-#include "CityCouncil.h"
 
 CityCouncil::CityCouncil() {
     this->deathCounter = 0;
@@ -13,24 +13,27 @@ CityCouncil::CityCouncil() {
 void CityCouncil::generateNewDeadList() {
     this->corpses = new Corpses();
     int numberOfDeaths = MIN_NUMBER_OF_DEATHS + rand() % MAX_NUMBER_OF_DEATHS;
-    for(int i = 1; i <= numberOfDeaths; i++) {
+
+    for(int i = 1; i <= numberOfDeaths; i++)
         this->corpses->push_back(new Corpse(this->deathCounter + i));
-    }
+
     this->deathCounter += numberOfDeaths;
 }
 
 void CityCouncil::publishDeadList() {
     this->generateNewDeadList();
-    int deathList[MAX_NUMBER_OF_DEATHS+1];
+
+    Distributor::MultipleDataPacket packet;
+    packet.size = corpses->size();
     int i = 0;
-    deathList[i++] = corpses->size();
+
     for (Corpses::iterator corpse = corpses->begin(); corpse != corpses->end(); corpse++)
-        deathList[i++] = (*corpse)->getId();
-    Distributor::broadcast(deathList, DEATH_LIST_PUBLICATION);
-    Debugger::out("Zarzad wywiesil nowa liste zmarlych");
-    std::cout << corpses->size() << std::endl;
+        packet.data[i++] = (*corpse)->getId();
+
+    Distributor::broadcast(packet, DEATH_LIST_PUBLICATION);
+    Debugger::out("Zarzad wywiesil nowa liste zmarlych (" + Debugger::number(corpses->size()) + ")");
 }
 
 void CityCouncil::goDoSomethingElse() {
-    sleep(10);
+    sleep(COUNCIL_SLEEP_TIME);
 }

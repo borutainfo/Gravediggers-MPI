@@ -2,19 +2,20 @@
 #define GRAVEDIGGERS_CITYCOUNCIL_H
 
 #include "../entity/Corpse.h"
-using namespace std;
 
 class CityCouncil {
+
+private:
     int deathCounter;
     Corpses *corpses;
 
-private:
     void generateNewDeadList();
 
 public:
     CityCouncil();
     void publishDeadList();
     void goDoSomethingElse();
+
 };
 
 #endif
