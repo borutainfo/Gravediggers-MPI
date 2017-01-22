@@ -7,10 +7,11 @@ class FuneralHome {
 
 private:
     Corpses *availableCorpses;
-    std::vector<int> funeralsOrder;
+    std::vector<int> funerals;
 
     void selectCorpse();
     void markCorpseAsUnavailable(int id);
+    bool checkFuneral(int tid);
 
 public:
     Corpse *corpse;
@@ -19,7 +20,7 @@ public:
     void getDeathList();
     bool negotiate();
     void makeFuneral();
-    void meetWithOfficer();
+    void meetWithOfficial();
 
 };
 

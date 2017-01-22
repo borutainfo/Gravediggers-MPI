@@ -1,9 +1,6 @@
-#include <iostream>
 #include "distributor/Distributor.h"
 #include "process/CityCouncil.h"
 #include "process/FuneralHome.h"
-
-using namespace std;
 
 int main(int argc, char **argv) {
 
@@ -25,7 +22,7 @@ int main(int argc, char **argv) {
             funeralHome->getDeathList();
             while(funeralHome->negotiate()) {
                 funeralHome->makeFuneral();
-                funeralHome->meetWithOfficer();
+                funeralHome->meetWithOfficial();
             }
         }
     }

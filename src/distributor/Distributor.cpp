@@ -1,13 +1,13 @@
-#include <mpi.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <mpi.h>
 #include "Distributor.h"
 
 int Distributor::size, Distributor::tid, Distributor::clock = 0;
-std::vector<Distributor::SingleDataPacketSnapshot*> *Distributor::snapshot =
-        new std::vector<Distributor::SingleDataPacketSnapshot*>;
+std::vector<SingleDataPacketSnapshot*> *Distributor::snapshot =
+        new std::vector<SingleDataPacketSnapshot*>;
 
 void Distributor::initialize() {
     MPI_Init(NULL, NULL);
@@ -35,6 +35,10 @@ void Distributor::makeSnapshot(SingleDataPacket packet, int tid) {
     Distributor::snapshot->push_back(snapshot);
 }
 
+void Distributor::clearSnapshot() {
+    Distributor::snapshot->clear();
+}
+
 std::vector<int> Distributor::getOrder() {
     std::vector<SingleDataPacketSnapshot> winners;
     for (std::vector<SingleDataPacketSnapshot*>::iterator snapshot1 = Distributor::snapshot->begin();
@@ -56,7 +60,6 @@ std::vector<int> Distributor::getOrder() {
     for (std::vector<SingleDataPacketSnapshot>::iterator winner = winners.begin(); winner != winners.end(); winner++) {
         order.push_back((*winner).tid);
     }
-    Distributor::snapshot->clear();
     return order;
 }
 
@@ -64,12 +67,7 @@ bool Distributor::identityCheck(int tid) {
     return tid == Distributor::tid;
 }
 
-//void Distributor::send(Packet &packet, int receiver, int tag) {
-//    MPI_Send(&packet.clock, 1, MPI_INT, receiver, tag, MPI_COMM_WORLD);
-//}
-
 void Distributor::send(SingleDataPacket &packet, int receiver, int tag) {
-    Distributor::makeSnapshot(packet, Distributor::tid);
     int message[2] = {packet.clock, packet.data};
     MPI_Send(&message, 2, MPI_INT, receiver, tag, MPI_COMM_WORLD);
 }
@@ -77,18 +75,18 @@ void Distributor::send(SingleDataPacket &packet, int receiver, int tag) {
 void Distributor::send(MultipleDataPacket &packet, int receiver, int tag) {
     int message[MAX_ARRAY_SIZE + 1];
     message[0] = packet.size;
-    for(int i = 0; i < MAX_ARRAY_SIZE; i++)
+    for(int i = 0; i < packet.size; i++)
         message[i+1] = packet.data[i];
     MPI_Send(&message, MAX_ARRAY_SIZE + 1, MPI_INT, receiver, tag, MPI_COMM_WORLD);
 }
 
-//void Distributor::broadcast(Packet &packet, int tag) {
-//    for(int i = 0; i < Distributor::size; i++)
-//        if(i != Distributor::tid && i != BROADCAST_EXCLUDED)
-//            send(packet, i, tag);
-//}
+void Distributor::sendToken(int receiver, int tag) {
+    char token = 'T';
+    MPI_Send(&token, 1, MPI_CHAR, receiver, tag, MPI_COMM_WORLD);
+}
 
 void Distributor::broadcast(SingleDataPacket &packet, int tag) {
+    Distributor::makeSnapshot(packet, Distributor::tid);
     for(int i = 0; i < Distributor::size; i++)
         if(i != Distributor::tid && i != BROADCAST_EXCLUDED)
             send(packet, i, tag);
@@ -99,11 +97,6 @@ void Distributor::broadcast(MultipleDataPacket &packet, int tag) {
         if(i != Distributor::tid && i != BROADCAST_EXCLUDED)
             send(packet, i, tag);
 }
-
-//void Distributor::receive(Packet &packet, int sender, int tag) {
-//    MPI_Status status;
-//    MPI_Recv(&packet.clock, MAX_ARRAY_SIZE + 1, MPI_INT, sender, tag, MPI_COMM_WORLD, &status);
-//}
 
 void Distributor::receive(SingleDataPacket &packet, int sender, int tag) {
     MPI_Status status;
@@ -121,4 +114,12 @@ void Distributor::receive(MultipleDataPacket &packet, int sender, int tag) {
     packet.size = message[0];
     for(int i = 0; i < packet.size; i++)
         packet.data[i] = message[i+1];
+}
+
+void Distributor::receiveToken(int sender, int tag) {
+    MPI_Status status;
+    char token = 'N';
+    while(token != 'T') {
+        MPI_Recv(&token, 1, MPI_CHAR, sender, tag, MPI_COMM_WORLD, &status);
+    }
 }

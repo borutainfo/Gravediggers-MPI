@@ -12,7 +12,7 @@ CityCouncil::CityCouncil() {
 
 void CityCouncil::generateNewDeadList() {
     this->corpses = new Corpses();
-    int numberOfDeaths = MIN_NUMBER_OF_DEATHS + rand() % MAX_NUMBER_OF_DEATHS;
+    int numberOfDeaths = MIN_NUMBER_OF_DEATHS + (rand() % (MAX_NUMBER_OF_DEATHS - MIN_NUMBER_OF_DEATHS + 1));
 
     for(int i = 1; i <= numberOfDeaths; i++)
         this->corpses->push_back(new Corpse(this->deathCounter + i));
@@ -23,8 +23,8 @@ void CityCouncil::generateNewDeadList() {
 void CityCouncil::publishDeadList() {
     this->generateNewDeadList();
 
-    Distributor::MultipleDataPacket packet;
-    packet.size = corpses->size();
+    MultipleDataPacket packet;
+    packet.size = this->corpses->size();
     int i = 0;
 
     for (Corpses::iterator corpse = corpses->begin(); corpse != corpses->end(); corpse++)

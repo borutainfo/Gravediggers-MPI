@@ -21,38 +21,43 @@ void FuneralHome::markCorpseAsUnavailable(int id) {
     }
 }
 
+bool FuneralHome::checkFuneral(int tid) {
+    return std::find(this->funerals.begin(), this->funerals.end(), tid) != this->funerals.end();
+}
+
 void FuneralHome::getDeathList() {
     this->availableCorpses = new Corpses();
 
-    Distributor::MultipleDataPacket packet;
+    MultipleDataPacket packet;
     Distributor::receive(packet, CITY_COUNCIL, DEATH_LIST_PUBLICATION);
+    Distributor::clock++;
 
-    for (int i = 0; i < packet.size; i++)
+    for (int i = 0; i < packet.size; i++) {
         this->availableCorpses->push_back(new Corpse(packet.data[i]));
+    }
 }
 
 void FuneralHome::selectCorpse() {
-    corpse = this->availableCorpses->at(rand() % this->availableCorpses->size());
+    this->corpse = this->availableCorpses->at(rand() % this->availableCorpses->size());
     this->markCorpseAsUnavailable(corpse->getId());
 }
 
 bool FuneralHome::negotiate() {
-    this->funeralsOrder.clear();
+    SingleDataPacket own, competitor;
+    this->funerals.clear();
 
-    bool result = true;
-    Distributor::SingleDataPacket own, competitor;
+    while(this->funerals.size() != (Distributor::size-1) && this->availableCorpses->size() != 0) {
+        if (!this->checkFuneral(Distributor::tid)) {
+            this->selectCorpse();
 
-    while (availableCorpses->size() > 0) {
-        this->selectCorpse();
+            own.clock = ++Distributor::clock;
+            own.data = corpse->getId();
 
-        own.clock = ++Distributor::clock;
-        own.data = corpse->getId();
-
-        Distributor::broadcast(own, FUNERAL_OFFER);
+            Distributor::broadcast(own, FUNERAL_OFFER);
+        }
 
         for (int id = 0; id < Distributor::size; id++) {
-            if (id != Distributor::tid && id != CITY_COUNCIL &&
-                std::find(this->funeralsOrder.begin(), this->funeralsOrder.end(), id) == this->funeralsOrder.end()) {
+            if (id != Distributor::tid && id != CITY_COUNCIL && !this->checkFuneral(id)) {
 
                 Distributor::receive(competitor, id, FUNERAL_OFFER);
                 this->markCorpseAsUnavailable(competitor.data);
@@ -60,22 +65,49 @@ bool FuneralHome::negotiate() {
                 Distributor::clock = std::max(own.clock, competitor.clock);
             }
         }
-        this->funeralsOrder = Distributor::getOrder();
+        this->funerals = Distributor::getOrder();
         Distributor::clock++;
-
-        if (std::find(this->funeralsOrder.begin(), this->funeralsOrder.end(), Distributor::tid) !=
-            this->funeralsOrder.end())
-            return true;
     }
-    return false;
+
+    Distributor::clearSnapshot();
+    return checkFuneral(Distributor::tid);
 }
 
 void FuneralHome::makeFuneral() {
+    Distributor::clock++;
     Debugger::out("Zaklad pogrzebowy nr " + Debugger::number(Distributor::tid) + " robi pogrzeb zmarlemu nr " +
-                  Debugger::number(corpse->getId()));
+                  Debugger::number(this->corpse->getId()));
     sleep(FUNERAL_TIME);
 }
 
-void FuneralHome::meetWithOfficer() {
+void FuneralHome::meetWithOfficial() {
+    SingleDataPacket token;
+    int before = CITY_COUNCIL, after = CITY_COUNCIL;
 
+    for (std::vector<int>::iterator tid = this->funerals.begin(); tid != this->funerals.end(); tid++) {
+        if ((*tid) == Distributor::tid) {
+            if(++tid != this->funerals.end())
+                after = (*tid);
+            break;
+        }
+        else {
+            before = (*tid);
+        }
+    }
+
+    if(before != CITY_COUNCIL) {
+        Distributor::receive(token, before, OFFICIAL_TOKEN);
+        Distributor::clock = std::max(Distributor::clock, token.clock);
+        Distributor::clock++;
+    }
+
+    Distributor::clock++;
+    Debugger::out("Zaklad pogrzebowy nr " + Debugger::number(Distributor::tid) + " ma spotkanie z urzednikiem. ");
+    sleep(OFFICIAL_TIME);
+
+    if(after != CITY_COUNCIL) {
+        token.clock = ++Distributor::clock;
+        token.data = 1;
+        Distributor::send(token, after, OFFICIAL_TOKEN);
+    }
 }
