@@ -80,11 +80,6 @@ void Distributor::send(MultipleDataPacket &packet, int receiver, int tag) {
     MPI_Send(&message, MAX_ARRAY_SIZE + 1, MPI_INT, receiver, tag, MPI_COMM_WORLD);
 }
 
-void Distributor::sendToken(int receiver, int tag) {
-    char token = 'T';
-    MPI_Send(&token, 1, MPI_CHAR, receiver, tag, MPI_COMM_WORLD);
-}
-
 void Distributor::broadcast(SingleDataPacket &packet, int tag) {
     Distributor::makeSnapshot(packet, Distributor::tid);
     for(int i = 0; i < Distributor::size; i++)
@@ -114,12 +109,4 @@ void Distributor::receive(MultipleDataPacket &packet, int sender, int tag) {
     packet.size = message[0];
     for(int i = 0; i < packet.size; i++)
         packet.data[i] = message[i+1];
-}
-
-void Distributor::receiveToken(int sender, int tag) {
-    MPI_Status status;
-    char token = 'N';
-    while(token != 'T') {
-        MPI_Recv(&token, 1, MPI_CHAR, sender, tag, MPI_COMM_WORLD, &status);
-    }
 }

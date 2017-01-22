@@ -21,14 +21,12 @@ public:
 
     static void send(SingleDataPacket &packet, int receiver, int tag = 0);
     static void send(MultipleDataPacket &packet, int receiver, int tag = 0);
-    static void sendToken(int receiver, int tag = 0);
 
     static void broadcast(SingleDataPacket &packet, int tag = 0);
     static void broadcast(MultipleDataPacket &packet, int tag = 0);
 
     static void receive(SingleDataPacket &packet, int sender, int tag = 0);
     static void receive(MultipleDataPacket &packet, int sender, int tag = 0);
-    static void receiveToken(int sender, int tag = 0);
 
 };
 
